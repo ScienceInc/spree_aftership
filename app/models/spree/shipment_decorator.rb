@@ -9,7 +9,7 @@ Spree::Shipment.class_eval do
 
       AftershipTracking.create(:tracking => tracking, :email => order.email, :order_number => order.number).add_to_aftership
 
-      unless defined?(Delayed::Job)
+      unless defined?(Delayed::Job) || defined?(Sidekiq::Worker)
         # If delayed job is not present, have to manually to push all the trackings
         AftershipTracking.add_to_aftership
       end

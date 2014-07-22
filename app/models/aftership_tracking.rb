@@ -39,6 +39,8 @@ class AftershipTracking < ActiveRecord::Base
   def add_to_aftership
     if defined?(Delayed::Job)
       Delayed::Job.enqueue(AftershipTrackingSubmissionJob.new(self.id))
+    elsif defined?(Sidekiq::Worker)
+      AftershipTrackingSubmissionWorker.perform_async(self.id)
     else
       self.exec_add_to_aftership
     end
