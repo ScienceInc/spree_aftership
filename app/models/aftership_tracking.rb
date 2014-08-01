@@ -4,6 +4,9 @@ require 'cgi'
 class AftershipTracking < ActiveRecord::Base
   attr_accessible :tracking, :email, :order_number, :add_to_aftership_at
 
+  belongs_to :shipment, class_name: "Spree::Shipment"
+  has_one :order, through: :shipment
+
   def exec_add_to_aftership
 
     # Use em-http-request when available.
@@ -13,25 +16,35 @@ class AftershipTracking < ActiveRecord::Base
 
     begin
 
-      post_data = {"api_key" => Spree::Aftership::Config[:api_key], "tracking_number" => tracking, "emails" => [email], "source" => "Spree Order: #{order_number}", "title" => order_number}
+      body = { "tracking" => {
+                "tracking_number" => tracking, 
+                "emails" => [email], 
+                "order_id" => order_number,
+                "customer_name" => "#{order.shipping_address.firstname} #{order.shipping_address.lastname}",
+                "custom_fields" => {
+                  "address1" => order.shipping_address.address1,
+                  "address2" => order.shipping_address.respond_to?(:address2) ? (order.shipping_address.address2 || "") : "",
+                  "city" => order.shipping_address.city,
+                  "zipcode" => order.shipping_address.zipcode,
+                  "state" => order.shipping_address.state.abbr,
+                  "items_with_count" => shipment.line_items.collect{|li| "#{li.variant.name} (#{li.quantity})" }.join(", ") }
+                }
+              }
 
-      request = HTTPI::Request.new("https://api.aftership.com/v1/trackings")
-      request.body = post_body_from_hash(post_data)
+      request = HTTPI::Request.new("https://api.aftership.com/v3/trackings")
+      request.headers = {"aftership-api-key" => Spree::Aftership::Config[:api_key], 'Content-Type' => 'application/json'}
+      request.body = body.to_json
       response = HTTPI.post(request)
 
       if response.code == 201
         logger.info "Tracking added to AfterShip"
         self.update_attributes(:add_to_aftership_at => Time.now)
-      elsif response.code == 422
-        logger.error "AfterShip responded with Unprocessable Entity, most likely unsupported tracking numbers"
-        self.update_attributes(:add_to_aftership_at => Time.now)
       else
         logger.error "Unable to add tracking number to AfterShip! Response Code: #{response.code}"
       end
 
-
     rescue Exception => e
-      logger.error "AfterShip Error #{e.message}"
+      logger.error "AfterShip Error: #{e.message}"
       logger.error "#{e.backtrace}"
     end
   end
