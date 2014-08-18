@@ -5,6 +5,7 @@ class AftershipTracking < ActiveRecord::Base
   attr_accessible :tracking, :email, :order_number, :add_to_aftership_at
 
   belongs_to :shipment, class_name: "Spree::Shipment"
+  has_many :line_items, class_name: "Spree::LineItem"
   has_one :order, through: :shipment
 
   def exec_add_to_aftership
@@ -27,7 +28,7 @@ class AftershipTracking < ActiveRecord::Base
                   "city" => order.shipping_address.city,
                   "zipcode" => order.shipping_address.zipcode,
                   "state" => order.shipping_address.state.abbr,
-                  "items_with_count" => shipment.line_items.collect{|li| "#{li.variant.name} (#{li.quantity})" }.join(", ") }
+                  "items_with_count" => self.line_items.collect{|li| "#{li.variant.name} (#{li.quantity})" }.join(", ") }
                 }
               }
 
@@ -53,7 +54,7 @@ class AftershipTracking < ActiveRecord::Base
     if defined?(Delayed::Job)
       Delayed::Job.enqueue(AftershipTrackingSubmissionJob.new(self.id))
     elsif defined?(Sidekiq::Worker)
-      AftershipTrackingSubmissionWorker.perform_async(self.id)
+      AftershipTrackingSubmissionWorker.perform_in(5.seconds, self.id)
     else
       self.exec_add_to_aftership
     end
@@ -63,7 +64,6 @@ class AftershipTracking < ActiveRecord::Base
     AftershipTracking.where(:add_to_aftership_at => nil).each do |tracking|
       tracking.add_to_aftership
     end
-    AftershipTracking.where("add_to_aftership_at <= ?", 1.month.ago).destroy_all
   end
 
   private
