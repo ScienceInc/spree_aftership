@@ -14,7 +14,7 @@ class AftershipController < Spree::BaseController
 						num.times do |i|
 							numbers << "testtracking#{i+1}"
 						end
-						render json: {success: true, tracking_numbers: numbers} and return
+						render json: {success: true, tracking_numbers: numbers, shipped_at: DateTime.now.to_date} and return
 					else
 						render json: {success: true} and return
 					end
@@ -26,7 +26,7 @@ class AftershipController < Spree::BaseController
 					tracked_shipments = order.first.shipments.select{|s| s.tracking.present? }
 					if tracked_shipments.any?
 						numbers = tracked_shipments.collect{|t| t.tracking}
-						render json: {success: true, tracking_numbers: numbers}
+						render json: {success: true, tracking_numbers: numbers, shipped_at: tracked_shipments.last.shipped_at.to_date}
 					else
 						render json: {success: true}
 					end
