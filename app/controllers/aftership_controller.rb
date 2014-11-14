@@ -6,7 +6,7 @@ class AftershipController < Spree::BaseController
 				redirect_to root_path
 			}
 			format.json {
-				render json: {success: false} if params[:order_number].blank? || params[:email].blank?
+				render json: {success: false} and return if params[:order_number].blank? || params[:email].blank?
 				# for testing purposes enter order number and email as 'test'
 				if params[:order_number].match(/^test/) && params[:email] = "test"
 					numbers = []
