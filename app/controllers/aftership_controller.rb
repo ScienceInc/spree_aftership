@@ -6,6 +6,7 @@ class AftershipController < Spree::BaseController
 				redirect_to root_path
 			}
 			format.json {
+				render json: {success: false} if params[:order_number].blank? || params[:email].blank?
 				# for testing purposes enter order number and email as 'test'
 				if params[:order_number].match(/^test/) && params[:email] = "test"
 					numbers = []
@@ -26,7 +27,7 @@ class AftershipController < Spree::BaseController
 					tracked_shipments = order.first.shipments.select{|s| s.tracking.present? }
 					if tracked_shipments.any?
 						numbers = tracked_shipments.collect{|t| t.tracking}
-						render json: {success: true, tracking_numbers: numbers, shipped_at: tracked_shipments.last.shipped_at.to_date}
+						render json: {success: true, tracking_numbers: numbers, shipped_at: tracked_shipments.last.shipped_at.try(:to_date)}
 					else
 						render json: {success: true}
 					end
