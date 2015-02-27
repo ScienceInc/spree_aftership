@@ -18,8 +18,8 @@ class AftershipTracking < ActiveRecord::Base
     begin
 
       body = { "tracking" => {
-                "tracking_number" => tracking, 
-                "emails" => [email], 
+                "tracking_number" => tracking,
+                "emails" => [email],
                 "order_id" => order_number,
                 "customer_name" => "#{order.shipping_address.firstname} #{order.shipping_address.lastname}",
                 "custom_fields" => {
@@ -32,7 +32,7 @@ class AftershipTracking < ActiveRecord::Base
                 }
               }
 
-      request = HTTPI::Request.new("https://api.aftership.com/v3/trackings")
+      request = HTTPI::Request.new("https://api.aftership.com/v4/trackings")
       request.headers = {"aftership-api-key" => Spree::Aftership::Config[:api_key], 'Content-Type' => 'application/json'}
       request.body = body.to_json
       response = HTTPI.post(request)
