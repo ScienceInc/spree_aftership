@@ -28,8 +28,8 @@ class AftershipTracking < ActiveRecord::Base
                   "city" => order.shipping_address.city,
                   "zipcode" => order.shipping_address.zipcode,
                   "state" => order.shipping_address.state.abbr,
-                  "items_with_count" => self.line_items.collect{|li| "#{li.variant.name} (#{li.quantity})" }.join(", ") },
-                  "giveaway_codes" => order.generate_giveaway_codes ? "#{PrizePoolConfig::CURRENT_GIVEAWAY_NAME}: #{order.giveaway_codes.map{|c| c.code}.join(', ')}" : ""
+                  "items_with_count" => self.line_items.collect{|li| "#{li.variant.name} (#{li.quantity})" }.join(", "),
+                  "giveaway_codes" => order.generate_giveaway_codes ? "#{PrizePoolConfig::CURRENT_GIVEAWAY_NAME}: #{order.giveaway_codes.map{|c| c.code}.join(', ')}" : ""}
                 }
               }
 
